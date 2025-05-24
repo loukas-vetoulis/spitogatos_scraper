@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spitogatos Private Listings Scraper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-section {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e0e7ff;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-scrape {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-scrape:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #8b4513;
+        }
+
+        .btn-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(252, 182, 159, 0.3);
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+
+        .status.loading {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #374151;
+            display: block;
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            display: block;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+        }
+
+        .results-count {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #8b4513;
+        }
+
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .property-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .property-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .property-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .property-details {
+            display: grid;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #6b7280;
+        }
+
+        .property-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .property-detail:last-child {
+            border-bottom: none;
+        }
+
+        .property-detail strong {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .private-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .note {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #92400e;
+        }
+
+        .note strong {
+            color: #78350f;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .property-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Spitogatos Private Listings</h1>
+            <p>Extract private house listings without real estate agencies</p>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="urlInput">Spitogatos URL:</label>
+                    <input type="url" id="urlInput" placeholder="https://www.spitogatos.gr/pwliseis-katoikies/glyfada/selida_354" value="https://www.spitogatos.gr/pwliseis-katoikies/glyfada/selida_354">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-scrape" onclick="scrapeListings()">
+                        <span id="scrapeText">🔍 Scrape Private Listings</span>
+                    </button>
+                    <button class="btn-export" onclick="exportData()" id="exportBtn" style="display: none;">
+                        📊 Export to CSV
+                    </button>
+                    <button class="btn-clear" onclick="clearResults()">
+                        🗑️ Clear Results
+                    </button>
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>Note:</strong> This scraper will attempt to extract property data and filter for private listings only. Due to CORS restrictions, you may need to use a proxy or browser extension for cross-origin requests. The demo shows how the data would be structured and processed.
+            </div>
+
+            <div id="status" class="status"></div>
+
+            <div id="results" class="results" style="display: none;">
+                <div class="results-header">
+                    <div class="results-count" id="resultsCount">0 private listings found</div>
+                </div>
+                <div id="propertyGrid" class="property-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scrapedData = [];
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function hideStatus() {
+            const status = document.getElementById('status');
+            status.style.display = 'none';
+        }
+
+        async function scrapeListings() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) return showStatus('Please enter a valid URL', 'error');
+
+            toggleScrapeButton(true);
+            showStatus('Scraping from backend...', 'loading');
+
+            try {
+                const resp = await fetch(`http://localhost:5000/api/scrape?url=${encodeURIComponent(url)}`);
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Unknown error');
+
+                scrapedData = data.listings;
+                displayResults(scrapedData);
+                showStatus(`Successfully found ${data.count} listings!`, 'success');
+            } catch (err) {
+                showStatus(`Error: ${err.message}`, 'error');
+            } finally {
+                toggleScrapeButton(false);
+            }
+        }
+
+        function toggleScrapeButton(disabled) {
+            const btn = document.querySelector('.btn-scrape');
+            btn.disabled = disabled;
+            document.getElementById('scrapeText').innerHTML = disabled
+                ? '<div class="spinner"></div>Scraping...'
+                : '🔍 Scrape Private Listings';
+        }
+
+        async function simulateScraping(url) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Sample data structure that would be extracted from Spitogatos
+            const samplePrivateListings = [
+                {
+                    title: "Διαμέρισμα 85τ.μ. προς πώληση-Γλυφάδα",
+                    price: "€320,000",
+                    area: "85 τ.μ.",
+                    bedrooms: "2",
+                    bathrooms: "1",
+                    floor: "2ος όροφος",
+                    yearBuilt: "1985",
+                    heating: "Αυτόνομη θέρμανση",
+                    condition: "Καλή κατάσταση",
+                    listingType: "Ιδιώτης",
+                    contact: "Τηλ: 210-xxx-xxxx",
+                    location: "Γλυφάδα, Κέντρο",
+                    description: "Φωτεινό διαμέρισμα με μπαλκόνια"
+                },
+                {
+                    title: "Μονοκατοικία 120τ.μ. προς πώληση-Γλυφάδα",
+                    price: "€450,000",
+                    area: "120 τ.μ.",
+                    bedrooms: "3",
+                    bathrooms: "2",
+                    floor: "Ισόγειο",
+                    yearBuilt: "1990",
+                    heating: "Κεντρική θέρμανση",
+                    condition: "Άριστη κατάσταση",
+                    listingType: "Ιδιώτης",
+                    contact: "Τηλ: 210-yyy-yyyy",
+                    location: "Γλυφάδα, Γκολφ",
+                    description: "Μονοκατοικία με κήπο και parking"
+                },
+                {
+                    title: "Διαμέρισμα 100τ.μ. προς πώληση-Γλυφάδα",
+                    price: "€380,000",
+                    area: "100 τ.μ.",
+                    bedrooms: "3",
+                    bathrooms: "2",
+                    floor: "3ος όροφος",
+                    yearBuilt: "2000",
+                    heating: "Αυτόνομη θέρμανση",
+                    condition: "Πολύ καλή κατάσταση",
+                    listingType: "Ιδιώτης",
+                    contact: "Τηλ: 210-zzz-zzzz",
+                    location: "Γλυφάδα, Παραλία",
+                    description: "Κοντά στη θάλασσα, ανακαινισμένο"
+                }
+            ];
+
+            scrapedData = samplePrivateListings;
+            displayResults(samplePrivateListings);
+            
+            showStatus(`Successfully found ${samplePrivateListings.length} private listings!`, 'success');
+            setTimeout(hideStatus, 3000);
+        }
+
+        function displayResults(listings) {
+            const resultsDiv = document.getElementById('results');
+            const resultsCount = document.getElementById('resultsCount');
+            const propertyGrid = document.getElementById('propertyGrid');
+            const exportBtn = document.getElementById('exportBtn');
+
+            resultsCount.textContent = `${listings.length} private listings found`;
+            propertyGrid.innerHTML = '';
+
+            listings.forEach((listing, index) => {
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                
+                card.innerHTML = `
+                    <div class="private-badge">👤 ${listing.listingType}</div>
+                    <div class="property-title">${listing.title}</div>
+                    <div class="property-details">
+                        <div class="property-detail">
+                            <span>💰 Τιμή:</span>
+                            <strong>${listing.price}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>📐 Εμβαδόν:</span>
+                            <strong>${listing.area}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>🛏️ Υπνοδωμάτια:</span>
+                            <strong>${listing.bedrooms}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>🚿 Μπάνια:</span>
+                            <strong>${listing.bathrooms}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>🏢 Όροφος:</span>
+                            <strong>${listing.floor}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>📅 Έτος κατασκευής:</span>
+                            <strong>${listing.yearBuilt}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>🔥 Θέρμανση:</span>
+                            <strong>${listing.heating}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>🏠 Κατάσταση:</span>
+                            <strong>${listing.condition}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>📍 Περιοχή:</span>
+                            <strong>${listing.location}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>📞 Επικοινωνία:</span>
+                            <strong>${listing.contact}</strong>
+                        </div>
+                        <div class="property-detail">
+                            <span>📝 Περιγραφή:</span>
+                            <strong>${listing.description}</strong>
+                        </div>
+                    </div>
+                `;
+                
+                propertyGrid.appendChild(card);
+            });
+
+            resultsDiv.style.display = 'block';
+            exportBtn.style.display = 'inline-block';
+        }
+
+        function exportData() {
+            if (scrapedData.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+
+            const headers = Object.keys(scrapedData[0]);
+            const csvContent = [
+                headers.join(','),
+                ...scrapedData.map(row => 
+                    headers.map(header => 
+                        `"${(row[header] || '').toString().replace(/"/g, '""')}"`
+                    ).join(',')
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `spitogatos_private_listings_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            showStatus('CSV file downloaded successfully!', 'success');
+            setTimeout(hideStatus, 3000);
+        }
+
+        function clearResults() {
+            const resultsDiv = document.getElementById('results');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            resultsDiv.style.display = 'none';
+            exportBtn.style.display = 'none';
+            scrapedData = [];
+            hideStatus();
+            
+            showStatus('Results cleared', 'success');
+            setTimeout(hideStatus, 2000);
+        }
+
+        // Auto-focus URL input on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('urlInput').focus();
+        });
+    </script>
+</body>
+</html>
